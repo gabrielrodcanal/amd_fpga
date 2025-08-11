@@ -1,3 +1,7 @@
+# Host building global settings
+CXXFLAGS := -I$(XILINX_XRT)/include/ -I$(XILINX_VIVADO)/include/ -Wall -O3 -std=c++11 -L$(XILINX_XRT)/lib/ -lhostsupport -lpthread -lrt -lstdc++
+CXXFLAGS2 := -lxilinxopencl
+
 host.cpp: ex1.F90 
 	xftn $< --offload -e apply-target{target=u280} -e lower-omp-target-data,omp-target-to-kernel,extract-target,target-to-hls{generate=host} -o host.mlir
 	ftn-opt host.mlir -t fpga-host | clang-format > $@
@@ -18,8 +22,11 @@ ex1.xclbin: ex1.xo
 
 build: ex1.xclbin
 
-host.exe: host.cpp
+host_debug.exe: host.cpp
 	g++ -DDEBUG $< -o $@ -lOpenCL
+
+host_fpga.exe: host.cpp
+	g++ $< -o $@ $(CXXFLAGS) $(CXXFLAGS2)
 
 clean:
 	rm -rf host.cpp host.exe *.mlir tmp/ *.ll
